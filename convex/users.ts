@@ -1,4 +1,5 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
 
 export const store = mutation({
   args: {},
@@ -32,6 +33,35 @@ export const store = mutation({
       email: identity.email!,
       imageUrl: identity.pictureUrl,
       clerkId: identity.subject,
+    });
+  },
+});
+
+export const getUsers = query({
+  args: {
+    searchTerm: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // 1. Get the current user
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return []; // Return empty if not logged in
+    }
+
+    // 2. Fetch all users from the database
+    const users = await ctx.db.query("users").collect();
+
+    // 3. Filter the users
+    return users.filter((user) => {
+      // Exclude the current logged-in user
+      if (user.clerkId === identity.subject) return false;
+
+      // Filter by search term if one was provided
+      if (args.searchTerm) {
+        return user.name?.toLowerCase().includes(args.searchTerm.toLowerCase());
+      }
+
+      return true;
     });
   },
 });
