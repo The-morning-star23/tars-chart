@@ -1,13 +1,20 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Image from "next/image";
 
-export default function Sidebar() {
+export default function Sidebar({ onSelectUser }: { onSelectUser: (user: any, conversationId: string) => void }) {
   const [searchTerm, setSearchTerm] = useState("");
   const users = useQuery(api.users.getUsers, { searchTerm });
+  const getOrCreateConversation = useMutation(api.conversations.getOrCreate);
+
+  const handleUserClick = async (user: any) => {
+    const conversationId = await getOrCreateConversation({ otherUserId: user.clerkId });
+    onSelectUser(user, conversationId);
+  };
 
   return (
     <div className="w-full md:w-80 border-r bg-white flex flex-col h-full">
@@ -30,7 +37,7 @@ export default function Sidebar() {
             <div
               key={user._id}
               className="p-4 border-b hover:bg-gray-50 cursor-pointer flex items-center gap-3"
-              onClick={() => console.log("Clicked user", user.name)}
+              onClick={() => handleUserClick(user)}
             >
               {user.imageUrl ? (
                 <Image 
