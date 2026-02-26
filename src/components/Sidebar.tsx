@@ -8,6 +8,17 @@ import Image from "next/image";
 import { formatMessageTime } from "@/lib/formatTime";
 import { useUser } from "@clerk/nextjs";
 
+// Reusable Skeleton Component for Sidebar
+const SidebarSkeleton = () => (
+  <div className="p-4 border-b border-slate-800/50 flex items-center gap-4">
+    <div className="w-11 h-11 rounded-full bg-slate-800 animate-pulse shrink-0"></div>
+    <div className="flex-1 space-y-2">
+      <div className="h-4 bg-slate-800 rounded w-1/2 animate-pulse"></div>
+      <div className="h-3 bg-slate-800 rounded w-3/4 animate-pulse"></div>
+    </div>
+  </div>
+);
+
 export default function Sidebar({ onSelectUser }: { onSelectUser: (user: any, conversationId: string) => void }) {
   const { user: myUser } = useUser();
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,7 +31,7 @@ export default function Sidebar({ onSelectUser }: { onSelectUser: (user: any, co
   const handleUserClick = async (user: any) => {
     const conversationId = await getOrCreateConversation({ otherUserId: user.clerkId });
     onSelectUser(user, conversationId);
-    setSearchTerm(""); // clear search after clicking
+    setSearchTerm("");
   };
 
   const isSearching = searchTerm.trim().length > 0;
@@ -39,10 +50,13 @@ export default function Sidebar({ onSelectUser }: { onSelectUser: (user: any, co
         </div>
       </div>
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {/* VIEW 1: SEARCHING FOR USERS */}
         {isSearching ? (
           users === undefined ? (
-            <div className="p-8 text-center text-slate-500 animate-pulse">Searching...</div>
+            <>
+              <SidebarSkeleton />
+              <SidebarSkeleton />
+              <SidebarSkeleton />
+            </>
           ) : users.length === 0 ? (
             <div className="p-8 text-center text-slate-500">No users found.</div>
           ) : (
@@ -54,17 +68,20 @@ export default function Sidebar({ onSelectUser }: { onSelectUser: (user: any, co
                   ) : (
                     <div className="w-11 h-11 rounded-full bg-slate-700 flex items-center justify-center ring-2 ring-slate-600 text-slate-300 font-medium">{user.name?.[0] ?? "?"}</div>
                   )}
-                  {onlineUsers.includes(user.clerkId) && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>}
+                  {onlineUsers.includes(user.clerkId ?? "") && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>}
                 </div>
                 <p className="font-semibold text-slate-200">{user.name || "Unknown User"}</p>
               </div>
             ))
           )
-        ) : 
-        /* VIEW 2: RECENT CONVERSATIONS */
-        (
+        ) : (
           recentConversations === undefined ? (
-            <div className="p-8 text-center text-slate-500 animate-pulse">Loading chats...</div>
+            <>
+              <SidebarSkeleton />
+              <SidebarSkeleton />
+              <SidebarSkeleton />
+              <SidebarSkeleton />
+            </>
           ) : recentConversations.length === 0 ? (
             <div className="p-8 text-center text-slate-500">No recent chats. Search for a user to start messaging!</div>
           ) : (
@@ -94,7 +111,7 @@ export default function Sidebar({ onSelectUser }: { onSelectUser: (user: any, co
                       ) : "Start a conversation..."}
                     </p>
                     {conv.unreadCount > 0 && (
-                      <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 shadow-sm animate-pulse">
+                      <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 shadow-sm animate-pulse">
                         {conv.unreadCount}
                       </span>
                     )}

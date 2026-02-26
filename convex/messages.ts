@@ -38,3 +38,49 @@ export const list = query({
     return messages;
   },
 });
+
+export const remove = mutation({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
+
+    const message = await ctx.db.get(args.messageId);
+    if (!message) {
+      throw new Error("Message not found");
+    }
+
+    if (message.senderId !== identity.subject) {
+      throw new Error("Unauthorized");
+    }
+
+    await ctx.db.patch(args.messageId, { isDeleted: true });
+  },
+});
+
+export const toggleReaction = mutation({
+  args: { messageId: v.id("messages"), emoji: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const message = await ctx.db.get(args.messageId);
+    if (!message) throw new Error("Message not found");
+
+    const currentReactions = message.reactions || [];
+    const existingIndex = currentReactions.findIndex(
+      (r) => r.emoji === args.emoji && r.userId === identity.subject
+    );
+
+    let newReactions;
+    if (existingIndex > -1) {
+      newReactions = currentReactions.filter((_, i) => i !== existingIndex);
+    } else {
+      newReactions = [...currentReactions, { emoji: args.emoji, userId: identity.subject }];
+    }
+
+    await ctx.db.patch(args.messageId, { reactions: newReactions });
+  }
+});
