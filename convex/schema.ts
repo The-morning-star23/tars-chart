@@ -21,4 +21,10 @@ export default defineSchema({
     senderId: v.string(),
     content: v.string(),
   }).index("by_conversationId", ["conversationId"]),
+
+  typing: defineTable({
+    conversationId: v.id("conversations"),
+    userId: v.string(),
+    isTyping: v.boolean(),
+  }).index("by_conversation_and_user", ["conversationId", "userId"]),
 });
