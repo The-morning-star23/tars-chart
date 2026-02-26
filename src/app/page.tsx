@@ -18,8 +18,13 @@ export default function Home() {
     setActiveConversation(conversationId as Id<"conversations">);
   };
 
+  const handleBack = () => {
+    setActiveConversation(null);
+    setActiveUser(null);
+  };
+
   return (
-    <main className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+    <main className="h-dvh bg-gray-50 flex flex-col overflow-hidden">
       <Navbar />
       
       <SignedOut>
@@ -32,18 +37,28 @@ export default function Home() {
       <SignedIn>
         <SyncUser />
         <div className="flex-1 flex overflow-hidden">
-          <Sidebar onSelectUser={handleSelectUser} />
+          {/* Sidebar - Hidden on mobile if a conversation is active */}
+          <div className={`${activeConversation ? 'hidden md:block' : 'block'} w-full md:w-80 h-full shrink-0`}>
+            <Sidebar onSelectUser={handleSelectUser} />
+          </div>
           
-          {activeConversation && activeUser ? (
-            <ChatArea conversationId={activeConversation} otherUser={activeUser} />
-          ) : (
-            <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-gray-50">
-              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                <span className="text-gray-500 text-2xl">💬</span>
+          {/* Chat Area - Hidden on mobile if NO conversation is active */}
+          <div className={`${!activeConversation ? 'hidden md:flex' : 'flex'} flex-1 flex-col overflow-hidden`}>
+            {activeConversation && activeUser ? (
+              <ChatArea 
+                conversationId={activeConversation} 
+                otherUser={activeUser} 
+                onBack={handleBack} 
+              />
+            ) : (
+              <div className="flex-1 flex-col items-center justify-center bg-gray-50 hidden md:flex">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+                  <span className="text-gray-500 text-2xl">💬</span>
+                </div>
+                <h2 className="text-xl font-medium text-gray-700">Select a user to start chatting</h2>
               </div>
-              <h2 className="text-xl font-medium text-gray-700">Select a user to start chatting</h2>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </SignedIn>
     </main>
