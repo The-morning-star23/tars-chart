@@ -10,6 +10,9 @@ export default function Sidebar({ onSelectUser }: { onSelectUser: (user: any, co
   const [searchTerm, setSearchTerm] = useState("");
   const users = useQuery(api.users.getUsers, { searchTerm });
   const getOrCreateConversation = useMutation(api.conversations.getOrCreate);
+  
+  // Fetch online users for the green dot
+  const onlineUsers = useQuery(api.presence.getOnlineUsers) || [];
 
   const handleUserClick = async (user: any) => {
     const conversationId = await getOrCreateConversation({ otherUserId: user.clerkId });
@@ -41,19 +44,25 @@ export default function Sidebar({ onSelectUser }: { onSelectUser: (user: any, co
               className="p-4 border-b border-slate-800/50 hover:bg-slate-800/80 cursor-pointer flex items-center gap-4 transition-all duration-200"
               onClick={() => handleUserClick(user)}
             >
-              {user.imageUrl ? (
-                <Image 
-                  src={user.imageUrl} 
-                  alt={user.name ?? "User"} 
-                  width={44} 
-                  height={44} 
-                  className="w-11 h-11 rounded-full ring-2 ring-slate-700" 
-                />
-              ) : (
-                <div className="w-11 h-11 rounded-full bg-slate-700 flex items-center justify-center ring-2 ring-slate-600 text-slate-300 font-medium">
-                  {user.name?.[0] ?? "?"}
-                </div>
-              )}
+              <div className="relative">
+                {user.imageUrl ? (
+                  <Image 
+                    src={user.imageUrl} 
+                    alt={user.name ?? "User"} 
+                    width={44} 
+                    height={44} 
+                    className="w-11 h-11 rounded-full ring-2 ring-slate-700" 
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-slate-700 flex items-center justify-center ring-2 ring-slate-600 text-slate-300 font-medium">
+                    {user.name?.[0] ?? "?"}
+                  </div>
+                )}
+                {/* The Green Online Dot */}
+                {onlineUsers.includes(user.clerkId) && (
+                  <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                )}
+              </div>
               <div>
                 <p className="font-semibold text-slate-200">{user.name || "Unknown User"}</p>
               </div>

@@ -27,4 +27,9 @@ export default defineSchema({
     userId: v.string(),
     isTyping: v.boolean(),
   }).index("by_conversation_and_user", ["conversationId", "userId"]),
+
+  presence: defineTable({
+    userId: v.string(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
 });
