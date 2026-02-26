@@ -20,6 +20,7 @@ export default function ChatArea({
   const [newMessage, setNewMessage] = useState("");
   const messages = useQuery(api.messages.list, { conversationId });
   const sendMessage = useMutation(api.messages.send);
+  const markAsRead = useMutation(api.conversations.markAsRead);
   
   const setTypingStatus = useMutation(api.typing.setStatus);
   const typingStatuses = useQuery(api.typing.getStatus, { conversationId });
@@ -38,7 +39,14 @@ export default function ChatArea({
 
   const isOtherUserTyping = typingStatuses && typingStatuses.length > 0;
 
-  // 1. Handle Scrolling Logic
+  // 1. Mark conversation as read when opened or when new messages arrive
+  useEffect(() => {
+    if (conversationId) {
+      markAsRead({ conversationId }).catch(console.error);
+    }
+  }, [conversationId, messages, markAsRead]);
+
+  // 2. Handle Scrolling Logic
   const handleScroll = () => {
     if (!scrollContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
@@ -53,7 +61,7 @@ export default function ChatArea({
     setUnreadCount(0);
   };
 
-  // 2. Watch for new messages
+  // 3. Watch for new messages to trigger auto-scroll
   useEffect(() => {
     if (!messages) return;
 
@@ -99,8 +107,10 @@ export default function ChatArea({
 
   return (
     <div className="flex-1 flex flex-col bg-slate-950 h-full relative">
+      {/* Background pattern */}
       <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] bg-size-[16px_16px] pointer-events-none"></div>
 
+      {/* Header */}
       <div className="p-4 border-b border-slate-800 bg-slate-900/95 backdrop-blur flex items-center gap-4 shadow-sm z-10 shrink-0">
         <button 
           onClick={onBack}
@@ -133,6 +143,7 @@ export default function ChatArea({
         </div>
       </div>
 
+      {/* Message List */}
       <div 
         ref={scrollContainerRef}
         onScroll={handleScroll}
@@ -162,6 +173,8 @@ export default function ChatArea({
             );
           })
         )}
+        
+        {/* Typing Indicator */}
         {isOtherUserTyping && (
           <div className="bg-slate-800 border border-slate-700 text-slate-400 self-start rounded-2xl rounded-tl-sm px-5 py-3 text-sm shadow-md flex items-center gap-2">
             <span className="flex gap-1">
@@ -171,9 +184,12 @@ export default function ChatArea({
             </span>
           </div>
         )}
+        
+        {/* Invisible div to scroll to */}
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Floating "New Messages" Button */}
       {isScrolledUp && unreadCount > 0 && (
         <button 
           onClick={scrollToBottom}
@@ -183,6 +199,7 @@ export default function ChatArea({
         </button>
       )}
 
+      {/* Input Form */}
       <form onSubmit={handleSend} className="p-4 bg-slate-900 border-t border-slate-800 flex gap-3 shrink-0 z-10">
         <input
           type="text"

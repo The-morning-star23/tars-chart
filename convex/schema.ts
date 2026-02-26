@@ -32,4 +32,10 @@ export default defineSchema({
     userId: v.string(),
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  readReceipts: defineTable({
+    userId: v.string(),
+    conversationId: v.id("conversations"),
+    lastReadTime: v.number(),
+  }).index("by_user_and_conversation", ["userId", "conversationId"]),
 });
