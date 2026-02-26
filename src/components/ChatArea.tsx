@@ -7,6 +7,7 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import Image from "next/image";
 import { formatMessageTime } from "@/lib/formatTime";
+import { useUser } from "@clerk/nextjs";
 
 export default function ChatArea({
   conversationId,
@@ -17,11 +18,14 @@ export default function ChatArea({
   otherUser: any;
   onBack: () => void;
 }) {
+  const { user: myUser } = useUser();
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [failedMessage, setFailedMessage] = useState(""); // Stores text if send fails
+  const [failedMessage, setFailedMessage] = useState("");
   
   const messages = useQuery(api.messages.list, { conversationId });
+  const allUsers = useQuery(api.users.getUsers, { searchTerm: "" }); // Fetch users to show names in groups
+  
   const sendMessage = useMutation(api.messages.send);
   const markAsRead = useMutation(api.conversations.markAsRead);
   const deleteMessage = useMutation(api.messages.remove);
@@ -90,22 +94,21 @@ export default function ChatArea({
     }, 1500);
   };
 
-  // NEW: Robust error handling with try/catch
   const handleSend = async (e?: React.FormEvent, retryText?: string) => {
     e?.preventDefault();
     const textToSend = retryText || newMessage.trim();
     if (!textToSend) return;
     
     setIsSending(true);
-    setFailedMessage(""); // Clear previous errors
+    setFailedMessage(""); 
     
     try {
       await sendMessage({ conversationId, content: textToSend });
-      if (!retryText) setNewMessage(""); // Only clear input if not a retry
+      if (!retryText) setNewMessage(""); 
       setTimeout(scrollToBottom, 100);
     } catch (error) {
       console.error("Failed to send message:", error);
-      setFailedMessage(textToSend); // Save the text so the user can retry
+      setFailedMessage(textToSend); 
     } finally {
       setIsSending(false);
       setTypingStatus({ conversationId, isTyping: false });
@@ -127,19 +130,29 @@ export default function ChatArea({
     <div className="flex-1 flex flex-col bg-slate-950 h-full relative">
       <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] bg-size-[16px_16px] pointer-events-none"></div>
 
+      {/* HEADER */}
       <div className="p-4 border-b border-slate-800 bg-slate-900/95 backdrop-blur flex items-center gap-4 shadow-sm z-10 shrink-0">
         <button onClick={onBack} className="md:hidden mr-1 text-slate-400 hover:text-white font-bold text-xl transition-colors">&larr;</button>
-        {otherUser.imageUrl ? (
+        
+        {/* GROUP vs 1-on-1 AVATAR */}
+        {otherUser.isGroup ? (
+          <div className="w-11 h-11 rounded-full bg-indigo-900/50 flex items-center justify-center ring-2 ring-indigo-500/30 text-indigo-300 font-bold border border-indigo-700/50 shadow-inner">
+            {otherUser.name?.[0]?.toUpperCase() ?? "G"}
+          </div>
+        ) : otherUser.imageUrl ? (
           <Image src={otherUser.imageUrl} alt={otherUser.name ?? "User"} width={44} height={44} className="w-11 h-11 rounded-full ring-2 ring-slate-700" />
         ) : (
           <div className="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center ring-2 ring-slate-700 text-slate-300 font-medium">
             {otherUser.name?.[0] ?? "?"}
           </div>
         )}
+
         <div>
           <div className="font-semibold text-lg text-slate-100">{otherUser.name || "Unknown User"}</div>
           <div className="text-xs flex items-center gap-1.5 mt-0.5">
-            {isOnline ? (
+            {otherUser.isGroup ? (
+              <span className="text-slate-400 font-medium">{otherUser.memberCount} members</span>
+            ) : isOnline ? (
               <><span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span><span className="text-emerald-400 font-medium">Online</span></>
             ) : (
               <><span className="w-2 h-2 rounded-full bg-slate-600"></span><span className="text-slate-500">Offline</span></>
@@ -148,13 +161,8 @@ export default function ChatArea({
         </div>
       </div>
 
-      <div 
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 z-10 relative"
-      >
+      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 z-10 relative">
         {messages === undefined ? (
-          // NEW: Beautiful chat skeleton loaders
           <div className="flex-1 flex flex-col gap-4 mt-2">
             <div className="self-start w-2/3 max-w-[75%] h-16 bg-slate-800 rounded-2xl rounded-tl-sm animate-pulse"></div>
             <div className="self-end w-1/2 max-w-[75%] h-12 bg-indigo-900/30 rounded-2xl rounded-tr-sm animate-pulse"></div>
@@ -162,11 +170,14 @@ export default function ChatArea({
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center text-slate-500 mt-10 bg-slate-900/50 p-4 rounded-2xl mx-auto border border-slate-800">
-            Say hi to {otherUser.name}! 👋
+            {otherUser.isGroup ? "Be the first to send a message to the group! 👋" : `Say hi to ${otherUser.name}! 👋`}
           </div>
         ) : (
           messages.map((msg) => {
-            const isMe = msg.senderId !== otherUser.clerkId;
+            // RELIABLE isMe CHECK FOR GROUPS
+            const isMe = msg.senderId === myUser?.id;
+            const senderInfo = allUsers?.find(u => u.clerkId === msg.senderId);
+            
             const groupedReactions = (msg.reactions || []).reduce((acc, r) => {
               acc[r.emoji] = (acc[r.emoji] || 0) + 1;
               return acc;
@@ -174,6 +185,14 @@ export default function ChatArea({
             
             return (
               <div key={msg._id} className={`group relative max-w-[75%] flex flex-col ${isMe ? "self-end" : "self-start"}`}>
+                
+                {/* DISPLAY SENDER NAME IN GROUPS */}
+                {otherUser.isGroup && !isMe && !msg.isDeleted && (
+                  <span className="text-xs text-indigo-300/80 font-medium mb-1 ml-2">
+                    {senderInfo?.name || "Unknown User"}
+                  </span>
+                )}
+
                 {!msg.isDeleted && (
                   <div className={`absolute -top-5 ${isMe ? "right-0" : "left-0"} opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 border border-slate-700 rounded-full px-2 py-1 flex gap-1 shadow-lg z-20`}>
                     {reactionEmojis.map(emoji => (
@@ -182,7 +201,7 @@ export default function ChatArea({
                   </div>
                 )}
 
-                <div className={`px-4 py-3 shadow-md relative ${isMe ? "bg-indigo-600 text-white rounded-2xl rounded-tr-sm" : "bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl rounded-tl-sm"} ${msg.isDeleted ? "opacity-70 bg-slate-800/50 border-slate-700/50!" : ""}`}>
+                <div className={`px-4 py-3 shadow-md relative ${isMe ? "bg-indigo-600 text-white rounded-2xl rounded-tr-sm" : "bg-slate-800 border border-slate-700 text-slate-100 rounded-2xl rounded-tl-sm"} ${msg.isDeleted ? "opacity-70 bg-slate-800/50! border-slate-700/50!" : ""}`}>
                   {msg.isDeleted ? (
                     <span className="italic text-sm text-slate-400 flex items-center gap-2">
                       <svg className="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
@@ -233,7 +252,6 @@ export default function ChatArea({
         </button>
       )}
 
-      {/* NEW: Error Banner for failed messages */}
       {failedMessage && (
         <div className="bg-rose-950/80 border-t border-rose-900 text-rose-200 px-4 py-2 text-sm flex justify-between items-center z-20">
           <span className="truncate mr-4">Failed to send: &quot;{failedMessage}&quot;</span>

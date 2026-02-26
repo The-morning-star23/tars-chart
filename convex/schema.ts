@@ -10,8 +10,11 @@ export default defineSchema({
   }).index("by_clerkId", ["clerkId"]),
 
   conversations: defineTable({
-    participantOne: v.string(),
-    participantTwo: v.string(),
+    participantOne: v.optional(v.string()), // For 1-on-1
+    participantTwo: v.optional(v.string()), // For 1-on-1
+    isGroup: v.optional(v.boolean()),       // NEW: Flag for groups
+    groupName: v.optional(v.string()),      // NEW: Name of the group
+    groupMembers: v.optional(v.array(v.string())), // NEW: Array of Clerk IDs
   })
     .index("by_participantOne", ["participantOne", "participantTwo"])
     .index("by_participantTwo", ["participantTwo", "participantOne"]),
