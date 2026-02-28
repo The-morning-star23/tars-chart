@@ -189,11 +189,22 @@ export default function ChatArea({
                   </span>
                 )}
 
+                {/* UNIFIED ACTION MENU: Emojis + Delete Button */}
                 {!msg.isDeleted && (
-                  <div className={`absolute -top-5 ${isMe ? "right-0" : "left-0"} opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 border border-slate-700 rounded-full px-2 py-1 flex gap-1 shadow-lg z-20`}>
+                  <div className={`absolute -top-5 ${isMe ? "right-0" : "left-0"} opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 border border-slate-700 rounded-full px-2 py-1 flex items-center gap-1 shadow-lg z-20`}>
                     {reactionEmojis.map(emoji => (
                       <button key={emoji} onClick={() => handleReaction(msg._id, emoji)} className="hover:scale-125 transition-transform text-sm">{emoji}</button>
                     ))}
+                    
+                    {/* Delete button safely inside the menu */}
+                    {isMe && (
+                      <>
+                        <div className="w-px h-3.5 bg-slate-600 mx-1 rounded-full"></div>
+                        <button onClick={() => handleDelete(msg._id)} className="text-slate-400 hover:text-rose-500 hover:scale-110 transition-all p-0.5" title="Delete message">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -207,11 +218,6 @@ export default function ChatArea({
                     <div className="flex flex-col">
                       <span className="leading-relaxed">{msg.content}</span>
                       <span className={`text-[10px] mt-1.5 self-end font-medium ${isMe ? "text-indigo-200" : "text-slate-400"}`}>{formatMessageTime(msg._creationTime)}</span>
-                      {isMe && (
-                        <button onClick={() => handleDelete(msg._id)} className="absolute -top-3 -left-3 bg-slate-800 text-slate-400 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white shadow-lg border border-slate-700 hover:border-rose-500">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>
