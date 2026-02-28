@@ -2,13 +2,10 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const setStatus = mutation({
-  args: {
-    conversationId: v.id("conversations"),
-    isTyping: v.boolean(),
-  },
+  args: { conversationId: v.id("conversations"), isTyping: v.boolean() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    if (!identity) return;
 
     const existing = await ctx.db
       .query("typing")
@@ -26,7 +23,7 @@ export const setStatus = mutation({
         isTyping: args.isTyping,
       });
     }
-  },
+  }
 });
 
 export const getStatus = query({
@@ -38,8 +35,10 @@ export const getStatus = query({
     const statuses = await ctx.db
       .query("typing")
       .withIndex("by_conversation_and_user", (q) => q.eq("conversationId", args.conversationId))
+      .filter(q => q.eq(q.field("isTyping"), true))
       .collect();
 
-    return statuses.filter((s) => s.userId !== identity.subject && s.isTyping);
-  },
+    // Return true if ANYONE ELSE is typing
+    return statuses.filter(s => s.userId !== identity.subject);
+  }
 });

@@ -194,7 +194,7 @@ export default function ChatArea({
                 )}
 
                 {!msg.isDeleted && (
-                  <div className={`absolute -top-5 ${isMe ? "right-0" : "left-0"} opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 border border-slate-700 rounded-full px-2 py-1 flex gap-1 shadow-lg z-20`}>
+                  <div className={`absolute -top-5 ${isMe ? "right-0" : "left-0"} opacity-40 hover:opacity-100 transition-opacity bg-slate-800 border border-slate-700 rounded-full px-2 py-1 flex gap-1 shadow-lg z-20`}>
                     {reactionEmojis.map(emoji => (
                       <button key={emoji} onClick={() => handleReaction(msg._id, emoji)} className="hover:scale-125 transition-transform text-sm">{emoji}</button>
                     ))}

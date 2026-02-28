@@ -11,12 +11,10 @@ export const heartbeat = mutation({
       .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .unique();
 
-    const now = Date.now();
-
     if (existing) {
-      await ctx.db.patch(existing._id, { updatedAt: now });
+      await ctx.db.patch(existing._id, { updatedAt: Date.now() });
     } else {
-      await ctx.db.insert("presence", { userId: identity.subject, updatedAt: now });
+      await ctx.db.insert("presence", { userId: identity.subject, updatedAt: Date.now() });
     }
   }
 });
@@ -24,9 +22,10 @@ export const heartbeat = mutation({
 export const getOnlineUsers = query({
   args: {},
   handler: async (ctx) => {
-    const users = await ctx.db.query("presence").collect();
-    const now = Date.now();
-    // A user is considered online if their last heartbeat was within the last 30 seconds
-    return users.filter(u => now - u.updatedAt < 30000).map(u => u.userId);
+    // A user is "online" if their heartbeat was within the last 30 seconds
+    const threshold = Date.now() - 30000;
+    const active = await ctx.db.query("presence").filter(q => q.gt(q.field("updatedAt"), threshold)).collect();
+    
+    return active.map(p => p.userId);
   }
 });

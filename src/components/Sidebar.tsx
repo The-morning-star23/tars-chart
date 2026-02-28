@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Image from "next/image";
@@ -33,6 +33,16 @@ export default function Sidebar({ onSelectUser }: { onSelectUser: (user: any, co
   const getOrCreateConversation = useMutation(api.conversations.getOrCreate);
   const createGroupMutation = useMutation(api.conversations.createGroup);
   const onlineUsers = useQuery(api.presence.getOnlineUsers) || [];
+
+  // NEW: Presence Heartbeat
+  const heartbeat = useMutation(api.presence.heartbeat);
+  useEffect(() => {
+    // Ping backend every 10 seconds to say "I'm online!"
+    const interval = setInterval(() => {
+      heartbeat().catch(() => {});
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [heartbeat]);
 
   const handleUserClick = async (user: any) => {
     const conversationId = await getOrCreateConversation({ otherUserId: user.clerkId });
