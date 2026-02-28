@@ -24,7 +24,7 @@ export default function ChatArea({
   const [failedMessage, setFailedMessage] = useState("");
   
   const messages = useQuery(api.messages.list, { conversationId });
-  const allUsers = useQuery(api.users.getUsers, { searchTerm: "" }); // Fetch users to show names in groups
+  const allUsers = useQuery(api.users.getUsers, { searchTerm: "" });
   
   const sendMessage = useMutation(api.messages.send);
   const markAsRead = useMutation(api.conversations.markAsRead);
@@ -130,11 +130,9 @@ export default function ChatArea({
     <div className="flex-1 flex flex-col bg-slate-950 h-full relative">
       <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] bg-size-[16px_16px] pointer-events-none"></div>
 
-      {/* HEADER */}
       <div className="p-4 border-b border-slate-800 bg-slate-900/95 backdrop-blur flex items-center gap-4 shadow-sm z-10 shrink-0">
         <button onClick={onBack} className="md:hidden mr-1 text-slate-400 hover:text-white font-bold text-xl transition-colors">&larr;</button>
         
-        {/* GROUP vs 1-on-1 AVATAR */}
         {otherUser.isGroup ? (
           <div className="w-11 h-11 rounded-full bg-indigo-900/50 flex items-center justify-center ring-2 ring-indigo-500/30 text-indigo-300 font-bold border border-indigo-700/50 shadow-inner">
             {otherUser.name?.[0]?.toUpperCase() ?? "G"}
@@ -174,7 +172,6 @@ export default function ChatArea({
           </div>
         ) : (
           messages.map((msg) => {
-            // RELIABLE isMe CHECK FOR GROUPS
             const isMe = msg.senderId === myUser?.id;
             const senderInfo = allUsers?.find(u => u.clerkId === msg.senderId);
             
@@ -186,7 +183,6 @@ export default function ChatArea({
             return (
               <div key={msg._id} className={`group relative max-w-[75%] flex flex-col ${isMe ? "self-end" : "self-start"}`}>
                 
-                {/* DISPLAY SENDER NAME IN GROUPS */}
                 {otherUser.isGroup && !isMe && !msg.isDeleted && (
                   <span className="text-xs text-indigo-300/80 font-medium mb-1 ml-2">
                     {senderInfo?.name || "Unknown User"}
@@ -194,7 +190,7 @@ export default function ChatArea({
                 )}
 
                 {!msg.isDeleted && (
-                  <div className={`absolute -top-5 ${isMe ? "right-0" : "left-0"} opacity-40 hover:opacity-100 transition-opacity bg-slate-800 border border-slate-700 rounded-full px-2 py-1 flex gap-1 shadow-lg z-20`}>
+                  <div className={`absolute -top-5 ${isMe ? "right-0" : "left-0"} opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 border border-slate-700 rounded-full px-2 py-1 flex gap-1 shadow-lg z-20`}>
                     {reactionEmojis.map(emoji => (
                       <button key={emoji} onClick={() => handleReaction(msg._id, emoji)} className="hover:scale-125 transition-transform text-sm">{emoji}</button>
                     ))}
