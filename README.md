@@ -6,7 +6,7 @@ A lightning-fast, real-time messaging web application built with Next.js, Convex
 ---
 
 ## 🎥 Video Presentation
-[**Watch the Loom Walkthrough & Code Explanation Here**] *(<- Paste your Loom video link here!)*
+[**https://www.loom.com/share/d541cafc24ec4f5a9775210bd86876f0**]
 
 ## 🚀 Tech Stack
 * **Framework**: Next.js (App Router)
